@@ -1,0 +1,121 @@
+<div align="center">
+
+# 🕷 Itsy
+
+**A tiny spider with a brain that lives on your desktop.**
+It crawls over your windows, hangs from them on silk, spins webs in their corners, runs from a rushing mouse, makes friends with a gentle one, and hunts the one you leave lying still.
+
+<!-- Record a GIF of the spider catching your cursor and put it here. This is the most important line of the README. -->
+<img src="docs/demo.gif" width="720" alt="Itsy catching a cursor">
+
+</div>
+
+---
+
+## What makes it alive
+
+**It has a brain.** Not a script: a small drive-based mind, the way simple animals are modelled.
+
+| | |
+|---|---|
+| **Senses** | how far the cursor is, how fast it moves, whether it is coming *at* the spider, how long it has been still, which windows are open |
+| **Emotions** | fear, hunger (real time since its last catch), energy, curiosity, boredom, and **trust in you**, remembered across restarts |
+| **Spider sense** | rush the mouse at it and it dodge-jumps out of the way before it even thinks |
+| **Choices** | explore window edges · spin a web · rappel under a window · rest · watch you · befriend you · freeze · flee · hunt |
+
+Be calm around it and its trust grows: it walks up to your cursor, waves a front leg and does a little side-to-side dance. Chase it and it learns to be wary. Leave the mouse still while it is hungry and it stalks, crouches and pounces.
+
+**It lives in your windows, not just on top of the screen.**
+
+- Walks along window title bars and hangs from their bottom edges on a thread
+- Drag a window and its webs come along; the spider dangling under it swings
+- Close or minimize a window and the silk on it falls
+- Bring another window to the front and anything behind it is hidden. The spider crawls out from under it.
+
+**A super-spider look.** Glossy red and blue with web lines and big white eyes, sphere-shaded with rim light and a soft shadow so it stands out from the screen. Prefer retro? Switch on pixel style.
+
+**Real legs.** Eight legs driven by two-bone inverse kinematics and an alternating tetrapod gait, the leg pattern real spiders use. Every joint has a height, so shadows lift as feet step and the whole spider leaves the ground when it jumps. It walks sideways and backwards like a spider instead of spinning on the spot.
+
+**Real silk.** Sagging, swaying threads; orb webs built the way spiders build them (frame, radials, then a sticky capture spiral laid from the outside in, with glue droplets). Old silk fades away by itself. **Swipe the mouse fast through silk to tear it** (the spider won't like that), or use *Clear webs* in the tray.
+
+**The trap.** A caught cursor is wrapped in a cocoon and pinned down. Shaking the mouse doesn't help. You have to **click** the strands apart: from 3 clicks right after its last meal up to 10 if it has gone hungry for an hour. Stop clicking and it wraps you up again.
+
+## Install
+
+Grab the installer for your OS from **[Releases](../../releases)**, or run from source:
+
+```bash
+git clone https://github.com/<you>/itsy.git
+cd itsy
+npm install
+npm start
+```
+
+`npm run demo` starts a faster, hungrier spider for recording videos.
+
+**Try it without installing:** open `src/renderer/index.html` through any static server (or GitHub Pages). It runs over a fake desktop with draggable windows.
+
+## Controls
+
+Right-click the tray icon:
+
+| | |
+|---|---|
+| **Pause** | Hide the spider |
+| **Free my cursor** / `Ctrl+Alt+X` | Emergency escape |
+| **Clear webs** | Sweep away all silk |
+| **Size** | Small / Medium / Large |
+| **Pixel style** | Retro pixel-art spider |
+| **Show its brain** | Live panel with its current action and emotions (great for videos) |
+| **Start with system** | Launch at login |
+
+Safety first: the cursor is only captured while the spider is actively guarding it. It lets go by itself after 60 seconds, and if the renderer ever stops responding the overlay goes click-through again within 2 seconds.
+
+## Tuning
+
+The knobs are at the top of [`src/renderer/app.js`](src/renderer/app.js):
+
+```js
+idleToHunt: 25,     // seconds the mouse must rest before it gets hunted
+cooldown: 120,      // seconds after an escape before it hunts again
+minHunger: 0.25,    // right after a meal it is full and leaves you alone
+minClicks: 3,       // strands on a quick re-catch
+maxClicks: 10,      // strands after a long fast
+hungerFull: 3600,   // seconds without a catch to reach maxClicks
+regrowAfter: 1.5,   // stop clicking this long and it re-wraps
+maxTrap: 60,        // it gets bored and lets go
+```
+
+## How it works
+
+```
+src/
+  main.js        Electron: transparent always-on-top overlay, cursor feed, tray
+  windows.js     Windows: lists open windows (EnumWindows via a tiny C# helper run by PowerShell, no native modules)
+  renderer/
+    world.js     windows in z-order, ledges/undersides, anchors relative to windows, layering
+    brain.js     senses → emotions → scored actions, spider sense, memory
+    spider.js    steering, gait, IK legs, hanging, jumping, 2.5D drawing, pixel mode
+    silk.js      threads, orb web generation and spinning route, tearing, cocoon
+    app.js       glue + layered rendering (+ a fake desktop when opened in a browser)
+```
+
+- **Layering.** Things are anchored to a host window. Drawing goes from the desktop up through each window, erasing that window's rectangle before drawing what sits on it, so a window brought to the front really hides the silk behind it.
+- **IK.** Each leg is hip → knee → foot, solved analytically (law of cosines). The knee always bends away from the body so legs never flip between the two solutions.
+- **Gait.** Two leg groups (L1 R2 L3 R4 / R1 L2 R3 L4). A group only steps while the other is planted. Feet land half a gait cycle ahead of their rest position.
+- **Webs are graphs plus a route.** The spider chases a "pen" along the route and the pen only moves while the spider keeps up, so the silk always comes out of the spider.
+
+Window awareness is Windows-only for now. On macOS/Linux it treats the whole screen as one surface.
+
+## Roadmap ideas
+
+- macOS window tracking
+- Multi-monitor roaming
+- Pause automatically during full-screen games and videos
+- More species and skins
+
+PRs welcome!
+
+## License
+
+MIT
