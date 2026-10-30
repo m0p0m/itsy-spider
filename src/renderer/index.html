@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Itsy</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+    #stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 1000; pointer-events: none; }
+    body.trapped #stage { pointer-events: auto; }
+    body.trapped, body.trapped * { cursor: none !important; }
+
+    /* Browser demo only: a fake desktop with windows to crawl over. */
+    #desk, #hint { display: none; }
+    body.web {
+      background: radial-gradient(120% 90% at 20% 10%, #3a4a6b 0%, #1f2638 45%, #121621 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    body.web #desk { display: block; position: fixed; inset: 0; }
+    .fw {
+      position: absolute; display: flex; flex-direction: column; overflow: hidden;
+      border-radius: 10px; background: #1e1f24; color: #d4d4d4;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .fw .bar {
+      flex: none; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+      background: #2a2c33; color: #9a9ca5; font-size: 12.5px; cursor: grab;
+    }
+    .fw .bar b { width: 11px; height: 11px; border-radius: 50%; background: #44474f; }
+    .fw .bar b.close { background: #ff5f57; cursor: pointer; }
+    .fw .bar b:nth-child(2) { background: #febc2e; }
+    .fw .bar b:nth-child(3) { background: #28c840; }
+    .fw .bar span { margin-left: 8px; }
+    .fw pre { margin: 0; padding: 14px 0; font: 13.5px/1.65 Consolas, 'Cascadia Code', Menlo, monospace; counter-reset: line; overflow: hidden; }
+    .fw pre span.l { display: block; counter-increment: line; }
+    .fw pre span.l::before { content: counter(line); display: inline-block; width: 40px; padding-right: 18px; text-align: right; color: #5d6170; }
+    .fw.notes { background: #f6f3ea; color: #3b3a36; }
+    .notes-body { padding: 18px 22px; font-size: 14px; line-height: 1.6; }
+    .notes-body h3 { margin: 0 0 8px; font-size: 16px; }
+    .k { color: #c586c0; } .f { color: #dcdcaa; } .s { color: #ce9178; }
+    .c { color: #6a9955; } .n { color: #b5cea8; } .v { color: #9cdcfe; } .t { color: #4ec9b0; }
+    body.web #hint {
+      display: block; position: fixed; right: 16px; bottom: 14px; padding: 8px 12px; border-radius: 8px; z-index: 5;
+      background: rgba(0,0,0,0.35); color: #c8cbd4; font-size: 12.5px; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div id="desk"></div>
+<div id="hint">Leave the mouse still · rush at it · stay calm near it · swipe fast through silk<br>Drag or close the windows · <b>P</b> pixel · <b>B</b> brain · <b>C</b> clear webs</div>
+<template id="tpl-code"><pre><span class="l"><span class="c">// a tiny spider lives on this screen</span></span><span class="l"><span class="k">import</span> { <span class="v">Spider</span> } <span class="k">from</span> <span class="s">'./spider'</span>;</span><span class="l"></span><span class="l"><span class="k">export function</span> <span class="f">solveKnee</span>(<span class="v">hip</span>, <span class="v">foot</span>, <span class="v">a</span>, <span class="v">b</span>) {</span><span class="l">  <span class="k">const</span> <span class="v">d</span> = <span class="t">Math</span>.<span class="f">hypot</span>(<span class="v">foot</span>.<span class="v">x</span> - <span class="v">hip</span>.<span class="v">x</span>, <span class="v">foot</span>.<span class="v">y</span> - <span class="v">hip</span>.<span class="v">y</span>);</span><span class="l">  <span class="k">const</span> <span class="v">alpha</span> = <span class="t">Math</span>.<span class="f">acos</span>((<span class="v">a</span> * <span class="v">a</span> + <span class="v">d</span> * <span class="v">d</span> - <span class="v">b</span> * <span class="v">b</span>) / (<span class="n">2</span> * <span class="v">a</span> * <span class="v">d</span>));</span><span class="l">  <span class="k">return</span> <span class="f">rotate</span>(<span class="v">hip</span>, <span class="v">foot</span>, <span class="v">alpha</span>, <span class="v">a</span>);</span><span class="l">}</span><span class="l"></span><span class="l"><span class="k">function</span> <span class="f">feel</span>(<span class="v">brain</span>, <span class="v">cursor</span>) {</span><span class="l">  <span class="k">if</span> (<span class="v">cursor</span>.<span class="v">rushing</span>) <span class="v">brain</span>.<span class="v">fear</span> += <span class="n">0.5</span>;</span><span class="l">  <span class="k">if</span> (<span class="v">cursor</span>.<span class="v">calm</span>) <span class="v">brain</span>.<span class="v">trust</span> += <span class="n">0.01</span>;</span><span class="l">  <span class="k">if</span> (<span class="v">cursor</span>.<span class="v">idle</span> &gt; <span class="n">7</span>) <span class="f">hunt</span>(<span class="v">cursor</span>);</span><span class="l">}</span></pre></template>
+<template id="tpl-notes"><div class="notes-body"><h3>todo</h3>☐ water the plants<br>☐ don't leave the mouse still<br>☐ be nice to the spider<br>☑ clean up cobwebs (swipe fast)</div></template>
+<canvas id="stage"></canvas>
+<script src="math.js"></script>
+<script src="world.js"></script>
+<script src="spider.js"></script>
+<script src="silk.js"></script>
+<script src="brain.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
