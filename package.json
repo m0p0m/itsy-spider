@@ -1,0 +1,26 @@
+{
+  "name": "itsy",
+  "version": "0.1.0",
+  "description": "A tiny procedural spider that lives on your desktop, spins webs across your windows and hunts your idle mouse cursor.",
+  "main": "src/main.js",
+  "author": "alamiali12",
+  "license": "MIT",
+  "keywords": ["desktop-pet", "spider", "electron", "inverse-kinematics", "procedural-animation", "overlay"],
+  "scripts": {
+    "start": "electron .",
+    "demo": "electron . --demo",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "dev.itsy.desktop",
+    "productName": "Itsy",
+    "files": ["src/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"] },
+    "mac": { "target": ["dmg"], "category": "public.app-category.entertainment" },
+    "linux": { "target": ["AppImage"] }
+  }
+}
