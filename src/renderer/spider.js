@@ -538,15 +538,7 @@ class Spider {
     const lc = Math.cos(-this.heading), ls = Math.sin(-this.heading);
     const light = (wx, wy) => ({ x: lc * wx - ls * wy, y: ls * wx + lc * wy });
 
-    // Pedipalps and fangs, tucked under the head.
-    const tap = Math.sin(this.t * (6 + this.excited * 12)) * (0.4 + this.excited * 1.1);
-    for (const side of [-1, 1]) {
-      const ph = side > 0 ? tap : -tap;
-      ctx.fillStyle = '#7a0a16';
-      ctx.beginPath(); ctx.ellipse(16.4 + ph * 0.4, side * 4.3, 2.4, 1.1, side * 0.45, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#1a1d33';
-      ctx.beginPath(); ctx.arc(18.2 + ph, side * 4.9, 0.9, 0, TAU); ctx.fill();
-    }
+    this.drawMouthparts(ctx);
 
     // Abdomen: big glossy blue egg with a red centre panel carrying the web
     // pattern, shaded like a sphere so it stands out from the screen.
@@ -593,17 +585,22 @@ class Spider {
     ctx.stroke();
     gloss(ctx, A.x + l.x * 1.3, l.y * 1.3, 6.5, 3.2, Math.atan2(l.y, l.x));
     sparkle(ctx, A.x + l.x * 1.6, l.y * 1.6, 1.3);
+    // Spinnerets at the tip, where the silk comes out.
+    ctx.fillStyle = '#0d1236';
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.ellipse(A.x - A.rx + 0.2, side * 1.3, 1.5, 0.9, side * 0.3, 0, TAU); ctx.fill();
+    }
 
-    // Pedicel + head: glossy red with web lines radiating from the eyes.
+    // Pedicel + cephalothorax: wider behind, narrowing to the eye region.
     ctx.fillStyle = '#12050a';
     ctx.beginPath(); ctx.ellipse(-2.5, 0, 3, 2.6, 0, 0, TAU); ctx.fill();
     l = light(-4, -5);
-    g = ctx.createRadialGradient(6 + l.x, l.y, 0.5, 6, 0, 13);
+    g = ctx.createRadialGradient(6 + l.x, l.y, 0.5, 7, 0, 13);
     g.addColorStop(0, '#ff7a7a');
     g.addColorStop(0.35, '#e01e32');
     g.addColorStop(0.8, '#8e0a1a');
     g.addColorStop(1, '#4d0410');
-    blob(ctx, 6, 0, 11, 9.4, 2.7, 0.07);
+    carapace(ctx);
     ctx.strokeStyle = 'rgba(220,228,255,0.12)';
     ctx.lineWidth = 3;
     ctx.stroke();
@@ -611,45 +608,146 @@ class Spider {
     ctx.fill();
     ctx.save();
     ctx.clip();
-    webPattern(ctx, 15, 0, 18, 4, Math.PI, 1.1);
-    sphereShade(ctx, 6, 0, 11, l);
+    // Darker eye region, fovea and the grooves radiating from it.
+    ctx.fillStyle = 'rgba(60,0,12,0.35)';
+    ctx.beginPath(); ctx.ellipse(14, 0, 5, 7.2, 0, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.5;
+    webPattern(ctx, 13.5, 0, 17, 3, Math.PI, 1);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(50,0,10,0.45)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    for (const a of [0.9, 1.5, 2.1, 2.7]) {
+      for (const side of [-1, 1]) {
+        ctx.moveTo(3.5 + Math.cos(a) * 1.6, side * Math.sin(a) * 1.6);
+        ctx.lineTo(3.5 + Math.cos(a) * 6.5, side * Math.sin(a) * 6.5);
+      }
+    }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(40,0,8,0.6)';
+    ctx.beginPath(); ctx.ellipse(3.5, 0, 1.5, 0.6, 0, 0, TAU); ctx.fill();
+    sphereShade(ctx, 7, 0, 11, l);
     ctx.restore();
-    blob(ctx, 6, 0, 11, 9.4, 2.7, 0.07);
-    rimLight(ctx, 6, 0, 11, l);
+    carapace(ctx);
+    rimLight(ctx, 7, 0, 11, l);
     ctx.strokeStyle = '#1a0308';
     ctx.lineWidth = 0.7;
     ctx.stroke();
     gloss(ctx, 5 + l.x * 0.8, l.y * 0.8, 4, 2.2, Math.atan2(l.y, l.x));
     sparkle(ctx, 5 + l.x * 1.05, l.y * 1.05, 0.9);
+    // Fine bristles around the eyes.
+    ctx.strokeStyle = 'rgba(255,200,200,0.35)';
+    ctx.lineWidth = 0.35;
+    ctx.beginPath();
+    for (let k = -4; k <= 4; k++) {
+      const y = k * 1.5, x = 17.6 - Math.abs(k) * 0.35;
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 1.3, y + k * 0.25);
+    }
+    ctx.stroke();
 
-    // The eyes: two big white lenses with heavy black rims, angled outward.
+    // Eight eyes: the big glossy front pair, then the smaller ones.
+    const hl = light(-0.9, -1.1);
+    const eye = (x, y, r, big) => {
+      ctx.fillStyle = '#050507';
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+      if (big) {
+        const g2 = ctx.createRadialGradient(x - hl.x * r * 0.3, y - hl.y * r * 0.3, 0, x, y, r);
+        g2.addColorStop(0, 'rgba(70,30,40,0.9)');
+        g2.addColorStop(0.7, 'rgba(10,6,10,1)');
+        g2.addColorStop(1, 'rgba(0,0,0,1)');
+        ctx.fillStyle = g2;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(30,0,6,0.9)';
+        ctx.lineWidth = 0.55;
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.beginPath(); ctx.arc(x + hl.x * r * 0.42, y + hl.y * r * 0.42, r * 0.3, 0, TAU); ctx.fill();
+      if (big) {
+        ctx.fillStyle = 'rgba(170,200,255,0.45)';
+        ctx.beginPath(); ctx.arc(x - hl.x * r * 0.38, y - hl.y * r * 0.38, r * 0.14, 0, TAU); ctx.fill();
+      }
+    };
     for (const side of [-1, 1]) {
-      ctx.save();
-      ctx.translate(12.6, side * 4);
-      ctx.rotate(side * 0.55);
-      ctx.beginPath();
-      ctx.moveTo(4.2, 0);
-      ctx.bezierCurveTo(3.4, side * -3.2, -2.6, side * -3.4, -3.6, side * -0.6);
-      ctx.bezierCurveTo(-3.8, side * 1.6, 1.8, side * 2.6, 4.2, 0);
-      ctx.closePath();
-      ctx.fillStyle = '#05050a';
-      ctx.fill();
-      ctx.scale(0.72, 0.62);
-      ctx.translate(0.3, side * -0.3);
-      ctx.beginPath();
-      ctx.moveTo(4.2, 0);
-      ctx.bezierCurveTo(3.4, side * -3.2, -2.6, side * -3.4, -3.6, side * -0.6);
-      ctx.bezierCurveTo(-3.8, side * 1.6, 1.8, side * 2.6, 4.2, 0);
-      ctx.closePath();
-      const lg = ctx.createLinearGradient(-3, -3, 3, 3);
-      lg.addColorStop(0, '#ffffff');
-      lg.addColorStop(1, '#cfd8ea');
-      ctx.fillStyle = lg;
-      ctx.fill();
-      ctx.restore();
+      eye(15.4, side * 2.5, 2.55, true);
+      eye(14.5, side * 5.3, 1.35, false);
+      eye(11.2, side * 5.4, 0.6, false);
+      eye(8.4, side * 6.1, 1.15, false);
     }
     ctx.restore();
   }
+
+  // Chelicerae with curved fangs (they part when excited, showing the mouth)
+  // and jointed pedipalps. Drawn before the head so its edge covers their base.
+  drawMouthparts(ctx) {
+    const open = this.excited * (0.5 + 0.5 * Math.sin(this.t * 9));
+    const tap = Math.sin(this.t * (6 + this.excited * 12)) * (0.4 + this.excited * 1.1);
+
+    // Pedipalps: coxa → femur → tip, red with a blue club at the end.
+    for (const side of [-1, 1]) {
+      const ph = side > 0 ? tap : -tap;
+      const a = { x: 15.2, y: side * 4.6 };
+      const b = { x: 19.2 + ph * 0.3, y: side * 7.1 };
+      const c = { x: 23.4 + ph, y: side * (6.4 + ph * 0.2) };
+      ctx.fillStyle = '#b3121f';
+      taper(ctx, a, b, 2.1, 1.7);
+      ctx.fillStyle = '#c4162a';
+      taper(ctx, b, c, 1.7, 1.4);
+      ctx.fillStyle = '#10121e';
+      dot(ctx, b, 0.85);
+      ctx.fillStyle = '#2346c8';
+      ctx.beginPath(); ctx.ellipse(c.x + 0.9, c.y, 1.7, 1.25, side * 0.3, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      dot(ctx, { x: c.x + 0.5, y: c.y - 0.4 }, 0.4);
+    }
+
+    // Mouth: the dark gap between the chelicerae.
+    ctx.fillStyle = '#1a0206';
+    ctx.beginPath(); ctx.ellipse(21.2, 0, 1.6 + open * 0.4, 0.9 + open * 0.9, 0, 0, TAU); ctx.fill();
+
+    for (const side of [-1, 1]) {
+      const y = side * (2.25 + open * 0.75);
+      const g = ctx.createRadialGradient(19.2, y - side * 0.8, 0.3, 19.8, y, 3.6);
+      g.addColorStop(0, '#d8303f');
+      g.addColorStop(0.6, '#8a0c1b');
+      g.addColorStop(1, '#3e040c');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(19.8, y, 3.5, 2.2, side * (0.1 + open * 0.15), 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#2a0308';
+      ctx.lineWidth = 0.45;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      dot(ctx, { x: 19.3, y: y - side * 0.7 }, 0.55);
+      // Fang: a dark curved claw folding inward.
+      const base = { x: 22.6, y: side * (2.5 + open * 0.8) };
+      const tip = { x: 23.7 + open * 0.5, y: side * (0.55 + open * 1.1) };
+      const fang = new Path2D();
+      fang.moveTo(base.x, base.y);
+      fang.quadraticCurveTo(24.4, side * (2.2 + open * 0.6), tip.x, tip.y);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#120608';
+      ctx.lineWidth = 1.5;
+      ctx.stroke(fang);
+      ctx.strokeStyle = 'rgba(255,220,200,0.3)';
+      ctx.lineWidth = 0.4;
+      ctx.stroke(fang);
+    }
+  }
+}
+
+// Cephalothorax outline in the body frame: wide behind, narrowing towards
+// the eye region and the front edge above the chelicerae.
+function carapace(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-3.5, 0);
+  ctx.bezierCurveTo(-3.5, -6.6, 1, -9.7, 6, -9.7);
+  ctx.bezierCurveTo(11, -9.7, 14.6, -7.8, 16.8, -5.5);
+  ctx.bezierCurveTo(18.3, -3.9, 18.6, -1.9, 18.6, 0);
+  ctx.bezierCurveTo(18.6, 1.9, 18.3, 3.9, 16.8, 5.5);
+  ctx.bezierCurveTo(14.6, 7.8, 11, 9.7, 6, 9.7);
+  ctx.bezierCurveTo(1, 9.7, -3.5, 6.6, -3.5, 0);
+  ctx.closePath();
 }
 
 const LEG_RED = ['#4a0510', '#c0142a', '#ff6a72'];
