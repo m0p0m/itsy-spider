@@ -25,13 +25,16 @@ function strokeSilk(ctx, width = 0.8, alpha = 1, path) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.globalAlpha = alpha;
+  // A wide faint stroke fakes the glow; shadowBlur looked the same but
+  // halved the frame rate on screen-wide threads.
+  ctx.strokeStyle = 'rgba(205,222,255,0.09)';
+  ctx.lineWidth = width + 3;
+  path ? ctx.stroke(path) : ctx.stroke();
   ctx.strokeStyle = 'rgba(40,45,60,0.2)';
   ctx.lineWidth = width + 1;
   path ? ctx.stroke(path) : ctx.stroke();
   ctx.strokeStyle = SHEEN;
   ctx.lineWidth = width;
-  ctx.shadowColor = 'rgba(210,225,255,0.55)';
-  ctx.shadowBlur = 3;
   path ? ctx.stroke(path) : ctx.stroke();
   ctx.restore();
 }
@@ -136,6 +139,17 @@ class Thread {
     ctx.beginPath();
     polyline(ctx, this.pts);
     strokeSilk(ctx, 0.75, Math.max(0, this.alpha) * 0.85);
+  }
+
+  // Draws many fully visible threads with one set of strokes: per-thread
+  // strokes were the most expensive thing on screen.
+  static drawAll(ctx, threads) {
+    const path = new Path2D();
+    for (const th of threads) {
+      if (th.alpha < 0.99) th.draw(ctx);
+      else if (th.pts.length > 1) polyline(path, th.pts);
+    }
+    strokeSilk(ctx, 0.75, 0.85, path);
   }
 
   // Index of the segment a swipe from p to q crosses, and where.

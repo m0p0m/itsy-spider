@@ -384,7 +384,7 @@
   }
 
   function drawLayer(id, spiderLayer) {
-    for (const th of threads) if (th.layer === id) th.draw(ctx);
+    Thread.drawAll(ctx, threads.filter((th) => th.layer === id));
     for (const s of snaps) if (s.layer === id) s.draw(ctx);
     for (const w of webs) {
       const layer = world.alive(w.host) ? w.host : 'top';
