@@ -313,6 +313,9 @@
 
     updateHost();
     brain.update(dt);
+    // Its eyes follow the cursor (or its catch) when it is close enough to care.
+    spider.lookAt = trap && !trap.released ? trap.center
+      : cursor.inside && vdist(cursor.p, spider.pos) < 700 ? cursor.p : null;
     spider.update(dt);
 
     const t = now();
@@ -441,7 +444,8 @@
   function drawCounter(trap) {
     const c = trap.center;
     const n = trap.strands.length;
-    const text = n ? `${n} × click to break free` : 'almost…';
+    if (!n) return; // still being wrapped, or about to break free
+    const text = `${n} × click to break free`;
     ctx.font = '600 12px system-ui, -apple-system, Segoe UI, sans-serif';
     ctx.textAlign = 'left';
     const w = ctx.measureText(text).width + 18;

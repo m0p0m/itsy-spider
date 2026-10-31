@@ -174,6 +174,7 @@ class Brain {
     sp.faceTarget = null;
     sp.crouchTarget = 0;
     sp.waveTarget = 0;
+    sp.wiggleTarget = 0;
     sp.excited = 0;
     sp.stop();
     if (!name) return;
@@ -508,21 +509,25 @@ function hunt(b, e) {
         }
         let away = vsub(sp.pos, prey);
         if (vlen(away) < 1) away = vec(0, 1);
-        sp.moveTo(e.clampToScreen(vadd(prey, vscale(vnorm(away), 110 * k)), 10), { speed: 85, slowRadius: 30, stopGo: true });
+        // Creeps in bursts while far away, then glides in smoothly.
+        const far = vdist(sp.pos, prey) > 230 * k;
+        sp.moveTo(e.clampToScreen(vadd(prey, vscale(vnorm(away), 110 * k)), 10), { speed: far ? 85 : 70, slowRadius: 30, stopGo: far });
         if (vdist(sp.pos, prey) < 130 * k) {
           sp.stop();
           sp.faceTarget = prey;
           sp.crouchTarget = 1;
+          sp.wiggleTarget = 1;
           sp.excited = 1;
           phase = 'crouch';
-          timer = 0.7;
+          timer = 0.55;
         }
       } else if (phase === 'crouch') {
+        // Crouched, eyes locked on, rear end wiggling like a cat about to pounce.
         timer -= dt;
-        const aim = Math.abs(angleDiff(sp.heading, vangle(vsub(prey, sp.pos))));
         // Moving the mouse now is too late: it pounces where the cursor was.
-        if ((timer <= 0 && aim < 0.15) || moved) {
+        if (timer <= 0 || moved) {
           sp.crouchTarget = 0;
+          sp.wiggleTarget = 0;
           sp.faceTarget = null;
           sp.jump(vadd(prey, vec(4.5, 9)), 0.3, 52);
           e.lift(true);

@@ -64,6 +64,13 @@ class Spider {
     this.nextGroup = 0;
     this.t = 0;
     this.excited = 0;
+    this.wiggle = 0; // pre-pounce butt wiggle, 0..1
+    this.wiggleTarget = 0;
+    this.lookAt = null; // world point its eyes and head follow
+    this.headTilt = 0;
+    this.grooming = 0; // seconds left of cleaning a front leg
+    this.groomSide = 1;
+    this.groomTimer = rand(4, 8);
     this.pixel = false;
     this.host = null;
 
@@ -141,6 +148,13 @@ class Spider {
     return this.local(Math.cos(a) * r + twitch, leg.side * Math.sin(a) * r);
   }
 
+  // Front leg brought to the mouth and rubbed against the palps, the way
+  // spiders clean their legs.
+  groomPos(leg) {
+    const rub = Math.sin(this.t * 13);
+    return this.local(25 + rub * 2.2, leg.side * (6.5 + Math.cos(this.t * 13) * 1.1));
+  }
+
   // Front leg raised and waving (greeting / courtship display).
   wavePos(leg) {
     const a = 0.5 + Math.sin(this.t * 7 + leg.side * 1.6) * 0.18;
@@ -214,9 +228,34 @@ class Spider {
     this.t += dt;
     this.crouch = approach(this.crouch, this.crouchTarget, 10, dt);
     this.wave = approach(this.wave, this.waveTarget, 6, dt);
+    this.wiggle = approach(this.wiggle, this.wiggleTarget, 12, dt);
+    this.updateMannerisms(dt);
     if (this.mode === 'air') return this.updateAir(dt);
     if (this.mode === 'hang') return this.updateHang(dt);
     this.updateWalk(dt);
+  }
+
+  // Little things that make it look alive: the head turns towards whatever
+  // it is watching, and when it stands around it cleans a front leg.
+  updateMannerisms(dt) {
+    let tilt = 0;
+    if (this.lookAt && this.mode === 'walk') {
+      tilt = clamp(angleDiff(this.heading, vangle(vsub(this.lookAt, this.pos))), -0.2, 0.2);
+    }
+    this.headTilt = approach(this.headTilt, tilt, 6, dt);
+
+    const idle = this.mode === 'walk' && vlen(this.vel) < 2 && this.wave < 0.05 && this.crouch < 0.3 && this.wiggle < 0.1;
+    if (!idle) {
+      this.grooming = 0;
+      return;
+    }
+    this.grooming = Math.max(0, this.grooming - dt);
+    this.groomTimer -= dt;
+    if (this.groomTimer <= 0) {
+      this.grooming = rand(1.2, 2.2);
+      this.groomSide = Math.random() < 0.5 ? -1 : 1;
+      this.groomTimer = rand(5, 11);
+    }
   }
 
   updateWalk(dt) {
@@ -290,7 +329,7 @@ class Spider {
     for (const leg of this.legs) {
       leg.hip = this.hipPos(leg);
       leg.target = vadd(this.restPos(leg), lead);
-      leg.free = leg.i === 0 && this.wave > 0.05;
+      leg.free = leg.i === 0 && (this.wave > 0.05 || (this.grooming > 0 && leg.side === this.groomSide));
     }
 
     if (!this.legs.some((l) => l.stepping)) {
@@ -316,8 +355,9 @@ class Spider {
     for (const leg of this.legs) {
       if (leg.free) {
         leg.stepping = false;
-        leg.foot = vlerp(leg.foot, this.wavePos(leg), 1 - Math.exp(-14 * dt));
-        leg.z = (16 + Math.sin(this.t * 7 + leg.side * 1.6) * 6) * s * this.wave;
+        const groom = this.grooming > 0 && leg.side === this.groomSide && this.wave <= 0.05;
+        leg.foot = vlerp(leg.foot, groom ? this.groomPos(leg) : this.wavePos(leg), 1 - Math.exp(-14 * dt));
+        leg.z = groom ? 10 * s : (16 + Math.sin(this.t * 7 + leg.side * 1.6) * 6) * s * this.wave;
       } else if (leg.stepping) {
         leg.t = Math.min(1, leg.t + dt / leg.dur);
         leg.foot = vlerp(leg.from, leg.target, easeInOut(leg.t));
@@ -538,11 +578,27 @@ class Spider {
     const lc = Math.cos(-this.heading), ls = Math.sin(-this.heading);
     const light = (wx, wy) => ({ x: lc * wx - ls * wy, y: ls * wx + lc * wy });
 
+    // The head (with its mouthparts) turns a little towards what it watches.
+    const turnHead = () => {
+      ctx.translate(-1, 0);
+      ctx.rotate(this.headTilt);
+      ctx.translate(1, 0);
+    };
+    ctx.save();
+    turnHead();
     this.drawMouthparts(ctx);
+    ctx.restore();
 
     // Abdomen: big glossy blue egg with a red centre panel carrying the web
-    // pattern, shaded like a sphere so it stands out from the screen.
+    // pattern, shaded like a sphere so it stands out from the screen. It
+    // breathes slowly and wiggles side to side right before a pounce.
     const A = ABDOMEN;
+    const breath = 1 + Math.sin(this.t * (2.2 + this.excited * 3)) * 0.018;
+    ctx.save();
+    ctx.translate(A.x, Math.sin(this.t * 26) * 2.2 * this.wiggle);
+    ctx.rotate(Math.sin(this.t * 26 + 0.6) * 0.07 * this.wiggle);
+    ctx.scale(breath, breath);
+    ctx.translate(-A.x, 0);
     let l = light(-5, -6);
     let g = ctx.createRadialGradient(A.x + l.x * 1.2, l.y * 1.2, 0.5, A.x, 0, A.rx * 1.2);
     g.addColorStop(0, '#8db0ff');
@@ -590,10 +646,13 @@ class Spider {
     for (const side of [-1, 1]) {
       ctx.beginPath(); ctx.ellipse(A.x - A.rx + 0.2, side * 1.3, 1.5, 0.9, side * 0.3, 0, TAU); ctx.fill();
     }
+    ctx.restore();
 
     // Pedicel + cephalothorax: wider behind, narrowing to the eye region.
     ctx.fillStyle = '#12050a';
     ctx.beginPath(); ctx.ellipse(-2.5, 0, 3, 2.6, 0, 0, TAU); ctx.fill();
+    ctx.save();
+    turnHead();
     l = light(-4, -5);
     g = ctx.createRadialGradient(6 + l.x, l.y, 0.5, 7, 0, 13);
     g.addColorStop(0, '#ff7a7a');
@@ -646,21 +705,31 @@ class Spider {
     }
     ctx.stroke();
 
-    // Eight eyes: the big glossy front pair, then the smaller ones.
+    // Eight eyes: the big glossy front pair, then the smaller ones. The big
+    // ones have a dark pupil that follows whatever it is looking at.
     const hl = light(-0.9, -1.1);
+    let look = { x: 1, y: 0 };
+    if (this.lookAt) {
+      const d = vsub(this.lookAt, this.head());
+      const a = -this.heading - this.headTilt;
+      const v = { x: Math.cos(a) * d.x - Math.sin(a) * d.y, y: Math.sin(a) * d.x + Math.cos(a) * d.y };
+      look = vscale(vnorm(v), Math.min(1, vlen(d) / 120));
+    }
     const eye = (x, y, r, big) => {
       ctx.fillStyle = '#050507';
       ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
       if (big) {
         const g2 = ctx.createRadialGradient(x - hl.x * r * 0.3, y - hl.y * r * 0.3, 0, x, y, r);
-        g2.addColorStop(0, 'rgba(70,30,40,0.9)');
-        g2.addColorStop(0.7, 'rgba(10,6,10,1)');
+        g2.addColorStop(0, 'rgba(120,50,45,0.95)');
+        g2.addColorStop(0.7, 'rgba(40,14,16,1)');
         g2.addColorStop(1, 'rgba(0,0,0,1)');
         ctx.fillStyle = g2;
         ctx.fill();
         ctx.strokeStyle = 'rgba(30,0,6,0.9)';
         ctx.lineWidth = 0.55;
         ctx.stroke();
+        ctx.fillStyle = '#020203';
+        ctx.beginPath(); ctx.arc(x + look.x * r * 0.3, y + look.y * r * 0.3, r * 0.6, 0, TAU); ctx.fill();
       }
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.beginPath(); ctx.arc(x + hl.x * r * 0.42, y + hl.y * r * 0.42, r * 0.3, 0, TAU); ctx.fill();
@@ -676,13 +745,15 @@ class Spider {
       eye(8.4, side * 6.1, 1.15, false);
     }
     ctx.restore();
+    ctx.restore();
   }
 
   // Chelicerae with curved fangs (they part when excited, showing the mouth)
   // and jointed pedipalps. Drawn before the head so its edge covers their base.
   drawMouthparts(ctx) {
     const open = this.excited * (0.5 + 0.5 * Math.sin(this.t * 9));
-    const tap = Math.sin(this.t * (6 + this.excited * 12)) * (0.4 + this.excited * 1.1);
+    const busy = Math.max(this.excited, this.grooming > 0 ? 1 : 0);
+    const tap = Math.sin(this.t * (6 + busy * 12)) * (0.4 + busy * 1.1);
 
     // Pedipalps: coxa → femur → tip, red with a blue club at the end.
     for (const side of [-1, 1]) {
