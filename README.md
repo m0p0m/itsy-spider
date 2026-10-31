@@ -5,7 +5,7 @@
 **A tiny spider with a brain that lives on your desktop.**
 It crawls over your windows, hangs from them on silk, spins webs in their corners, runs from a rushing mouse, makes friends with a gentle one, and hunts the one you leave lying still.
 
-<img src="docs/demo.gif" width="720" alt="Itsy catching a cursor">
+<img src="docs/social-preview.png" width="720" alt="Itsy, a red-and-blue spider resting in its web">
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
