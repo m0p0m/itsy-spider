@@ -9,6 +9,7 @@ const fs = require('fs');
 const { startWindowTracker } = require('./windows');
 
 const DEMO = process.argv.includes('--demo');
+const QUIT = process.argv.includes('--quit'); // `npm run stop`: tell a running spider to exit
 const FREE_SHORTCUT = 'CommandOrControl+Alt+X';
 const WATCHDOG_MS = 2000;
 const SIZES = { Small: 0.5, Medium: 0.62, Large: 0.8 };
@@ -21,7 +22,10 @@ let lastBeat = 0;
 let stopTracker = () => {};
 let lastWindows = [];
 
-if (!app.requestSingleInstanceLock()) app.quit();
+// Only one spider at a time. A second launch hands its arguments to the
+// running one (which resumes it, or exits on --quit) and then leaves.
+const primary = app.requestSingleInstanceLock();
+if (!primary || QUIT) app.quit();
 
 // ------------------------------------------------------------ settings
 
@@ -200,6 +204,7 @@ function makeTrayIcon() {
 }
 
 app.whenReady().then(() => {
+  if (!primary || QUIT) return;
   loadSettings();
   createWindow();
   startCursorFeed();
@@ -218,7 +223,10 @@ app.whenReady().then(() => {
   ipcMain.on('beat', () => { lastBeat = Date.now(); });
 });
 
-app.on('second-instance', () => { if (paused) setPaused(false); });
+app.on('second-instance', (_e, argv) => {
+  if (argv.includes('--quit')) app.quit();
+  else if (paused) setPaused(false);
+});
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   stopTracker();

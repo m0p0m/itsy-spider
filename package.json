@@ -5,10 +5,18 @@
   "main": "src/main.js",
   "author": "alamiali12",
   "license": "MIT",
-  "keywords": ["desktop-pet", "spider", "electron", "inverse-kinematics", "procedural-animation", "overlay"],
+  "keywords": [
+    "desktop-pet",
+    "spider",
+    "electron",
+    "inverse-kinematics",
+    "procedural-animation",
+    "overlay"
+  ],
   "scripts": {
     "start": "electron .",
     "demo": "electron . --demo",
+    "stop": "electron . --quit",
     "dist": "electron-builder"
   },
   "devDependencies": {
@@ -18,9 +26,29 @@
   "build": {
     "appId": "dev.itsy.desktop",
     "productName": "Itsy",
-    "files": ["src/**/*", "package.json"],
-    "win": { "target": ["nsis", "portable"] },
-    "mac": { "target": ["dmg"], "category": "public.app-category.entertainment" },
-    "linux": { "target": ["AppImage"] }
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
