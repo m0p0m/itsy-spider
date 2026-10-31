@@ -5,8 +5,13 @@
 **A tiny spider with a brain that lives on your desktop.**
 It crawls over your windows, hangs from them on silk, spins webs in their corners, runs from a rushing mouse, makes friends with a gentle one, and hunts the one you leave lying still.
 
-<!-- Record a GIF of the spider catching your cursor and put it here. This is the most important line of the README. -->
 <img src="docs/demo.gif" width="720" alt="Itsy catching a cursor">
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Electron](https://img.shields.io/badge/built%20with-Electron-47848f)
+
+**English** · [فارسی](README.fa.md)
 
 </div>
 
@@ -42,18 +47,43 @@ Be calm around it and its trust grows: it walks up to your cursor, waves a front
 
 ## Install
 
-Grab the installer for your OS from **[Releases](../../releases)**, or run from source:
+### Option 1: installer (easiest)
+
+Download the latest installer from **[Releases](../../releases)** and run it. Windows gives you `Itsy Setup.exe` (or a portable `.exe` that needs no install).
+
+### Option 2: run from source
+
+You need:
+
+| Requirement | Version | Get it |
+|---|---|---|
+| **Node.js** (includes npm) | 18 or newer | [nodejs.org](https://nodejs.org) (LTS) |
+| **Git** | any | [git-scm.com](https://git-scm.com) |
+| **OS** | Windows 10/11 for the full experience | macOS/Linux run too, without window awareness |
+
+Then:
 
 ```bash
-git clone https://github.com/<you>/itsy.git
-cd itsy
+git clone https://github.com/m0p0m/itsy-spider.git
+cd itsy-spider
 npm install
 npm start
 ```
 
-`npm run demo` starts a faster, hungrier spider for recording videos.
+`npm install` downloads Electron (about 100 MB) the first time, so give it a minute.
 
-**Try it without installing:** open `src/renderer/index.html` through any static server (or GitHub Pages). It runs over a fake desktop with draggable windows.
+## Turning it on and off
+
+| | |
+|---|---|
+| **Start** | `npm start`, or open *Itsy* from the Start menu if you used the installer |
+| **Start in demo mode** | `npm run demo`: hunts after 10 s instead of 25 s, great for recording videos |
+| **Stop** | Right-click the 🕷 tray icon (next to the clock) → **Quit**, or run `npm run stop` |
+| **Pause / resume** | Tray icon → **Pause** (hides it without quitting) |
+| **Start with Windows** | Tray icon → **Start with system** |
+| **Free a trapped cursor now** | `Ctrl+Alt+X` |
+
+Only one spider runs at a time; starting it again while it is paused wakes it up.
 
 ## Controls
 
@@ -69,7 +99,27 @@ Right-click the tray icon:
 | **Show its brain** | Live panel with its current action and emotions (great for videos) |
 | **Start with system** | Launch at login |
 
-Safety first: the cursor is only captured while the spider is actively guarding it. It lets go by itself after 60 seconds, and if the renderer ever stops responding the overlay goes click-through again within 2 seconds.
+Safety first: the cursor is only captured while the spider is actively guarding it. It lets go by itself after 60 seconds, and if the app ever stops responding the overlay goes click-through again within 2 seconds.
+
+**Try it without installing:** serve `src/renderer/` with any static server (for example `npx serve src/renderer`) and open it in a browser. It runs over a fake desktop with draggable windows. Keys: `P` pixel style, `B` brain panel, `C` clear webs.
+
+## Build your own installer
+
+```bash
+npm run dist
+```
+
+The installer lands in `dist/`. Pushing a tag like `v0.1.0` builds Windows, macOS and Linux installers on GitHub Actions and attaches them to a draft release.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| My cursor is stuck in a web | Click fast, or press `Ctrl+Alt+X`. It also lets go by itself after 60 s. |
+| I don't see the spider | It may be behind a window or paused: check the tray icon. Try **Size → Large**. |
+| It hunts too often / too soon | Change `idleToHunt` and `cooldown` in [`src/renderer/app.js`](src/renderer/app.js) (see *Tuning*). |
+| `npm install` is very slow | Electron is a large download; a VPN or another network can help. |
+| It doesn't react to windows | Window awareness needs Windows 10/11 and PowerShell (built in). |
 
 ## Tuning
 

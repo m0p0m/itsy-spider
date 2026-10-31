@@ -5,6 +5,11 @@
   "main": "src/main.js",
   "author": "alamiali12",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m0p0m/itsy-spider.git"
+  },
+  "homepage": "https://github.com/m0p0m/itsy-spider#readme",
   "keywords": [
     "desktop-pet",
     "spider",
