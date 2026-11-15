@@ -41,7 +41,7 @@ Be calm around it and its trust grows: it walks up to your cursor, waves a front
 
 **Real legs.** Eight legs driven by two-bone inverse kinematics and an alternating tetrapod gait, the leg pattern real spiders use. Every joint has a height, so shadows lift as feet step and the whole spider leaves the ground when it jumps. It walks sideways and backwards like a spider instead of spinning on the spot.
 
-**Real silk.** Sagging, swaying threads; orb webs built the way spiders build them (frame, radials, then a sticky capture spiral laid from the outside in, with glue droplets). Old silk fades away by itself. **Swipe the mouse fast through silk to tear it** (the spider won't like that), or use *Clear webs* in the tray.
+**Real silk.** Sagging, swaying threads; orb webs built the way spiders build them (frame, radials, then a sticky capture spiral laid from the outside in, with glue droplets), sometimes finished with a zigzag band through the hub. Fresh silk shines as it is laid, and finished webs slowly gather dew that catches the light. **Fling a window and the drops fly off.** Old silk fades away by itself. **Swipe the mouse fast through silk to tear it** (the spider won't like that), or use *Clear webs* in the tray.
 
 **The trap.** A caught cursor is wrapped in a cocoon and pinned down. Shaking the mouse doesn't help. You have to **click** the strands apart: from 3 clicks right after its last meal up to 10 if it has gone hungry for an hour. Stop clicking and it wraps you up again.
 

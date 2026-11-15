@@ -1,6 +1,6 @@
 {
   "name": "itsy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A tiny procedural spider that lives on your desktop, spins webs across your windows and hunts your idle mouse cursor.",
   "main": "src/main.js",
   "author": "alamiali12",
