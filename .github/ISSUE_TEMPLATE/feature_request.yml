@@ -1,0 +1,21 @@
+name: Feature idea
+description: Something new the spider could do, or a way to make it better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What should it do? A sketch, video or a real spider's behaviour as reference is very welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it be nice?
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Want to build it?
+      options:
+        - label: I'd like to work on this myself

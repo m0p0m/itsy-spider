@@ -1,0 +1,55 @@
+name: Bug report
+description: Something the spider does wrong, or something that breaks.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! If your cursor is stuck right now, press **Ctrl+Alt+X**.
+        For security problems, please use the Security tab instead of a public issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we reproduce it?
+      placeholder: |
+        1. Start Itsy
+        2. Leave the mouse still on a maximized window
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshot or screen recording
+      description: Drag files here. A short clip helps a lot for anything about movement.
+  - type: input
+    id: version
+    attributes:
+      label: Itsy version
+      placeholder: 0.2.0, or the commit if you run it from source
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS
+        - Linux
+        - Browser demo
+    validations:
+      required: true
+  - type: input
+    id: screens
+    attributes:
+      label: Screens and scaling
+      placeholder: e.g. 2 monitors, 1920x1080 at 125% and 2560x1440 at 100%

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/m0p0m/itsy-spider/discussions
+    about: Ask a question, share a clip of your spider, or talk through an idea before opening an issue.
+  - name: Security problem
+    url: https://github.com/m0p0m/itsy-spider/security/advisories/new
+    about: Report it privately, please.

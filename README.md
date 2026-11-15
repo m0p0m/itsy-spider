@@ -10,6 +10,8 @@ It crawls over your windows, hangs from them on silk, spins webs in their corner
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 ![Electron](https://img.shields.io/badge/built%20with-Electron-47848f)
+[![Latest release](https://img.shields.io/github/v/release/m0p0m/itsy-spider)](../../releases/latest)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **English** · [فارسی](README.fa.md)
 
@@ -164,7 +166,13 @@ Window awareness is Windows-only for now. On macOS/Linux it treats the whole scr
 - Pause automatically during full-screen games and videos
 - More species and skins
 
-PRs welcome!
+Each of these has an [open issue](../../issues). Want one? Comment on it and it's yours.
+
+## Contributing
+
+Bug reports, ideas, art and code are all welcome, beginners included. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [`good first issue`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label, or share a clip of your spider in [Discussions](../../discussions). Found a security problem? See [SECURITY.md](SECURITY.md).
+
+If Itsy made you smile, a ⭐ helps other people find it.
 
 ## License
 
