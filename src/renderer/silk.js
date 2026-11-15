@@ -39,6 +39,111 @@ function strokeSilk(ctx, width = 0.8, alpha = 1, path) {
   ctx.restore();
 }
 
+// ------------------------------------------------------------- sprites
+// Water drops and glints are painted once into small canvases and stamped
+// with drawImage: hundreds of them per web cost about as much as one stroke.
+
+const SPRITE = 64, SPRITE_R = 24; // sprite size, and the drop's radius inside it
+let SPRITES = null;
+
+function sprites() {
+  if (SPRITES) return SPRITES;
+  const make = (paint) => {
+    const c = document.createElement('canvas');
+    c.width = c.height = SPRITE;
+    paint(c.getContext('2d'), SPRITE / 2);
+    return c;
+  };
+  const disc = (g, x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); };
+  SPRITES = {
+    // A clear drop: the background shows through, its edge bends light and
+    // reads darker, light focuses into a bright crescent on the far side, and
+    // a sharp highlight sits on the near side. Works on dark and light windows.
+    drop: make((g, m) => {
+      const r = SPRITE_R;
+      let gr = g.createRadialGradient(m - r * 0.2, m - r * 0.25, r * 0.1, m, m, r);
+      gr.addColorStop(0, 'rgba(255,255,255,0.2)');
+      gr.addColorStop(0.68, 'rgba(205,222,255,0.24)');
+      gr.addColorStop(0.9, 'rgba(48,60,88,0.6)');
+      gr.addColorStop(1, 'rgba(30,38,56,0.15)');
+      g.fillStyle = gr;
+      disc(g, m, m, r);
+      g.save();
+      g.beginPath();
+      g.arc(m, m, r * 0.94, 0, TAU);
+      g.clip();
+      gr = g.createRadialGradient(m + r * 0.18, m + r * 0.62, 0, m + r * 0.18, m + r * 0.62, r * 0.62);
+      gr.addColorStop(0, 'rgba(255,255,255,0.85)');
+      gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr;
+      disc(g, m + r * 0.18, m + r * 0.62, r * 0.62);
+      g.restore();
+      // A thin rim of reflected sky along the top edge.
+      g.strokeStyle = 'rgba(255,255,255,0.35)';
+      g.lineWidth = r * 0.07;
+      g.beginPath();
+      g.arc(m, m, r * 0.97, Math.PI * 1.05, Math.PI * 1.45);
+      g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.97)';
+      g.beginPath();
+      g.ellipse(m - r * 0.36, m - r * 0.4, r * 0.26, r * 0.17, -0.65, 0, TAU);
+      g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.7)';
+      disc(g, m + r * 0.36, m + r * 0.08, r * 0.07);
+    }),
+    // A four-point star of light.
+    glint: make((g, m) => {
+      g.translate(m, m);
+      for (const [len, wid, rot] of [[1, 0.07, 0], [1, 0.07, Math.PI / 2], [0.5, 0.05, Math.PI / 4], [0.5, 0.05, -Math.PI / 4]]) {
+        g.save();
+        g.rotate(rot);
+        const lg = g.createLinearGradient(-m * len, 0, m * len, 0);
+        lg.addColorStop(0, 'rgba(255,255,255,0)');
+        lg.addColorStop(0.5, 'rgba(255,255,255,1)');
+        lg.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = lg;
+        g.beginPath();
+        g.ellipse(0, 0, m * len, m * wid, 0, 0, TAU);
+        g.fill();
+        g.restore();
+      }
+      const rg = g.createRadialGradient(0, 0, 0, 0, 0, m * 0.32);
+      rg.addColorStop(0, 'rgba(255,255,255,0.95)');
+      rg.addColorStop(1, 'rgba(235,242,255,0)');
+      g.fillStyle = rg;
+      disc(g, 0, 0, m * 0.32);
+    }),
+    // Soft light where fresh silk leaves the spider.
+    glow: make((g, m) => {
+      const rg = g.createRadialGradient(m, m, 0, m, m, m);
+      rg.addColorStop(0, 'rgba(255,255,255,0.9)');
+      rg.addColorStop(0.25, 'rgba(225,236,255,0.45)');
+      rg.addColorStop(1, 'rgba(210,225,255,0)');
+      g.fillStyle = rg;
+      disc(g, m, m, m);
+    }),
+  };
+  return SPRITES;
+}
+
+// A drop of radius r at (x, y), pulled into a slight teardrop by gravity;
+// `stretch` lengthens it further while it falls.
+function stampDrop(ctx, x, y, r, stretch = 1) {
+  const k = r / SPRITE_R, w = SPRITE * k, h = w * 1.1 * stretch;
+  ctx.drawImage(sprites().drop, x - w / 2, y - h / 2 + r * 0.15 * stretch, w, h);
+}
+
+function stampGlint(ctx, x, y, size) {
+  ctx.drawImage(sprites().glint, x - size / 2, y - size / 2, size, size);
+}
+
+// Grows from nothing with a little overshoot, like a bead of glue setting.
+function popIn(t) {
+  if (t >= 0.35) return 1;
+  const k = Math.max(0, t / 0.35);
+  return easeOut(k) * (1 + 0.35 * Math.sin(k * Math.PI));
+}
+
 // A smooth curve through points (each corner rounded off at the midpoints).
 function smoothPath(path, pts) {
   if (pts.length < 2) return;
@@ -198,6 +303,9 @@ class Snap {
 
 // ---------------------------------------------------------------- OrbWeb
 
+// How much each kind of straight strand sags under its own weight.
+const SAG = { frame: 0.07, radial: 0.02, deco: 0 };
+
 // The web is a graph of nodes stored relative to its host window; `strokes`
 // is the route the spider walks while spinning it. The spider chases the
 // "pen" and the pen only advances while the spider keeps up, so the silk
@@ -222,7 +330,14 @@ class OrbWeb {
     this.py = [];
     this.origin = { x: host == null ? 0 : rect.x, y: host == null ? 0 : rect.y };
     this.rel = vsub(center, this.origin);
+    this.vel = vec(); // how fast its window is being dragged
+    this.falling = []; // drops shaken off the silk
+    this.doneAt = null;
+    this.movedAt = -1;
+    this.lastPluck = 0;
+    this.dripIn = rand(4, 9);
     this.build(rect, center);
+    this.laidAt = new Float32Array(this.strokes.length);
     this.update(0, 0, null);
   }
 
@@ -337,12 +452,75 @@ class OrbWeb {
       }
     }
 
-    // Glue droplets along the capture spiral.
+    // Some orb weavers finish with a stabilimentum: a dense zigzag band of
+    // silk through the hub, either an X or a single vertical bar.
+    if (Math.random() < 0.55) {
+      const arms = Math.random() < 0.5
+        ? [0.25, 0.75, 1.25, 1.75].map((f) => f * Math.PI + rand(-0.12, 0.12))
+        : [-Math.PI / 2, Math.PI / 2];
+      for (const ang of arms) {
+        const dir = fromAngle(ang), side = { x: -dir.y, y: dir.x };
+        const len = R * rand(0.38, 0.55);
+        go(hub, false);
+        let i = 0;
+        for (let r = 9; r < len; r += rand(2.4, 3.4), i++) {
+          const w = rand(3, 4.6) * (1 - (r / len) * 0.45) * (i % 2 ? 1 : -1);
+          go(this.node(vadd(c, vadd(vscale(dir, r), vscale(side, w))), 0.8), i > 0, 'deco');
+        }
+      }
+      go(hub, false);
+    }
+
+    // Glue droplets along the capture spiral, and bigger water drops that
+    // condense on the spiral and the radials once the web is finished.
     this.strokes.forEach((st, idx) => {
-      if (st.kind !== 'spiral' || !st.lay) return;
+      if (!st.lay || (st.kind !== 'spiral' && st.kind !== 'radial')) return;
       const len = vdist(this.abs(st.i), this.abs(st.j));
-      for (let d = rand(2, 6); d < len; d += rand(5, 11)) this.drops.push({ s: idx, u: d / len, r: rand(0.45, 1.1), ph: rand(0, TAU) });
+      const big = clamp(R / 90, 0.85, 1.2);
+      if (st.kind === 'spiral') {
+        for (let d = rand(2, 6); d < len; d += rand(5, 11)) this.drops.push({ s: idx, u: d / len, r: rand(0.45, 1.1), ph: rand(0, TAU), at: -1 });
+      }
+      const gap = st.kind === 'spiral' ? [16, 34] : [18, 42];
+      for (let d = rand(0, gap[1]); d < len; d += rand(gap[0], gap[1])) {
+        this.drops.push({
+          s: idx, u: d / len, ph: rand(0, TAU), at: -1, dew: true,
+          r: (Math.random() < 0.15 ? rand(2.2, 2.9) : rand(1.2, 2.1)) * big,
+          delay: rand(0.8, 14), back: null,
+        });
+      }
     });
+  }
+
+  // Where a drop sits right now: on its strand, sagging with it.
+  dropAt(d, a, b) {
+    const st = this.strokes[d.s], u = d.u, len = vdist(a, b);
+    const sag = st.kind === 'spiral' ? u * (1 - u) * len * 0.12 : 2 * u * (1 - u) * len * SAG[st.kind];
+    return { x: lerp(a.x, b.x, u), y: lerp(a.y, b.y, u) + sag };
+  }
+
+  // 0..1: water collects after the web is done and refills after a drip.
+  dew(d) {
+    if (this.doneAt == null) return 0;
+    const start = d.back ?? this.doneAt + d.delay;
+    return easeOut(clamp((this.age - start) / 3, 0, 1));
+  }
+
+  // Lets up to n full drops fall, flung with velocity v.
+  shed(n, v, lowOnly = false) {
+    const dews = this.drops.filter((d) => d.dew);
+    if (!dews.length) return;
+    let count = Math.floor(n) + (Math.random() < n % 1 ? 1 : 0);
+    const cy = this.center.y;
+    for (let tries = 0; count > 0 && tries < count * 12; tries++) {
+      const d = pick(dews);
+      if (this.dew(d) < 0.95) continue;
+      const st = this.strokes[d.s];
+      const p = this.dropAt(d, this.pos(st.i), this.pos(st.j));
+      if (lowOnly && p.y < cy) continue;
+      d.back = this.age + rand(5, 12);
+      this.falling.push({ x: p.x, y: p.y, vx: v.x * 0.7 + rand(-25, 25), vy: v.y * 0.7 + rand(-10, 40), r: d.r, life: 1 });
+      count--;
+    }
   }
 
   abs(i) { return { x: this.nodes[i].x + this.origin.x, y: this.nodes[i].y + this.origin.y }; }
@@ -357,6 +535,7 @@ class OrbWeb {
   advance(dt, speed, spiderPos, reach) {
     if (this.done || this.dying || vdist(spiderPos, this.pen) > reach) return;
     let budget = speed * dt;
+    if (budget > 0) this.movedAt = this.age;
     while (budget > 0 && !this.done) {
       const s = this.strokes[this.k];
       const len = Math.max(0.5, vdist(this.pos(s.i), this.pos(s.j)));
@@ -367,14 +546,20 @@ class OrbWeb {
       } else {
         budget -= left;
         this.frac = 0;
+        this.laidAt[this.k] = this.age;
         this.k++;
-        if (this.k >= this.strokes.length) this.done = true;
+        if (this.k >= this.strokes.length) {
+          this.done = true;
+          this.doneAt = this.age;
+        }
       }
     }
   }
 
   collapse() {
     if (this.collapsing) return;
+    // Every drop on it rains down as it falls apart.
+    this.shed(this.drops.length, vec(0, 60));
     this.collapsing = true;
     this.dying = true;
   }
@@ -383,8 +568,36 @@ class OrbWeb {
     this.age += dt;
     if (world) {
       if (!world.alive(this.host)) this.collapse();
-      else this.origin = world.origin(this.host);
+      else {
+        const o = world.origin(this.host);
+        // Clamped: a window that jumps (maximize, snap) shouldn't fire drops across the screen.
+        if (dt > 0) this.vel = vapproach(this.vel, vclampLen(vscale(vsub(o, this.origin), 1 / dt), 2500), 12, dt);
+        this.origin = o;
+      }
     }
+
+    // Water drips off now and then, falls when the spider lands on the web,
+    // and flies off when you drag its window around.
+    if (this.done && !this.dying && dt > 0) {
+      const sp = vlen(this.vel);
+      if (sp > 450) this.shed(Math.min(4, sp * dt * 0.03), this.vel);
+      if (this.pluck > this.lastPluck + 0.3) this.shed(rand(2, 5), vec());
+      this.dripIn -= dt;
+      if (this.dripIn <= 0) {
+        this.shed(1, vec(), true);
+        this.dripIn = rand(3, 9);
+      }
+    }
+    this.lastPluck = this.pluck;
+    for (const f of this.falling) {
+      f.vy += 1100 * dt;
+      f.vx *= Math.exp(-0.6 * dt);
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+      f.life -= dt * 0.8;
+    }
+    this.falling = this.falling.filter((f) => f.life > 0);
+
     if (this.dying) this.alpha -= dt * (this.collapsing ? 0.9 : 0.6);
     if (this.collapsing) this.fallT += dt;
     this.pluck = approach(this.pluck, 0, 1.8, dt);
@@ -400,8 +613,7 @@ class OrbWeb {
   }
 
   draw(ctx) {
-    const SAG = { frame: 0.07, radial: 0.02 };
-    const paths = { frame: new Path2D(), radial: new Path2D(), hub: new Path2D(), spiral: new Path2D() };
+    const paths = { frame: new Path2D(), radial: new Path2D(), hub: new Path2D(), spiral: new Path2D(), deco: new Path2D() };
     const seg = [];
     const count = this.done ? this.strokes.length : this.k;
     // Consecutive spiral strokes are joined into one smooth curve.
@@ -440,34 +652,83 @@ class OrbWeb {
     strokeSilk(ctx, 0.65, 0.6 * a, paths.radial);
     strokeSilk(ctx, 0.55, 0.55 * a, paths.hub);
     strokeSilk(ctx, 0.55, 0.75 * a, paths.spiral);
+    strokeSilk(ctx, 1.35, 0.9 * a, paths.deco);
 
-    // Glue droplets; a few of them catch the light and twinkle.
-    const drops = new Path2D();
-    const t = this.t || 0;
     ctx.save();
+    if (!this.done && !this.dying) this.drawFresh(ctx, seg, count, a);
+
+    // Glue beads pop up as the spiral is laid; once the web is done a ripple
+    // of light runs out from the hub, then water slowly gathers on it.
+    const t = this.t || 0, age = this.age, c = this.center;
+    const wave = this.doneAt == null ? -1 : age - this.doneAt;
+    const waveOn = wave >= 0 && wave < 1.6, waveR = wave * 240;
+    const glue = new Path2D(), dew = [], glints = [];
     for (const d of this.drops) {
-      const sg = seg[d.s];
-      if (!sg || (d.s === count && d.u > this.frac)) continue;
-      const len = vdist(sg[0], sg[1]);
-      const x = lerp(sg[0].x, sg[1].x, d.u);
-      const y = lerp(sg[0].y, sg[1].y, d.u) + d.u * (1 - d.u) * len * 0.12;
-      drops.moveTo(x + d.r, y);
-      drops.arc(x, y, d.r, 0, TAU);
-      if (d.r > 0.9) {
-        const tw = Math.max(0, Math.sin(t * 1.7 + d.ph));
-        if (tw > 0.6) {
-          ctx.globalAlpha = a * (tw - 0.6) * 2.2;
-          ctx.fillStyle = '#fff';
-          ctx.beginPath();
-          ctx.arc(x, y, d.r * 1.9, 0, TAU);
-          ctx.fill();
-        }
+      if (!seg[d.s] || (d.s === count && d.u > this.frac)) continue;
+      if (d.at < 0) d.at = age;
+      const st = this.strokes[d.s];
+      const p = this.dropAt(d, this.pos(st.i), this.pos(st.j));
+      let r = d.r * popIn(age - d.at);
+      if (d.dew) {
+        r *= this.dew(d);
+        if (r < 0.2) continue;
+        dew.push(p.x, p.y, r);
+      } else {
+        glue.moveTo(p.x + r, p.y);
+        glue.arc(p.x, p.y, r, 0, TAU);
       }
+      let shine = 0;
+      if (waveOn) {
+        const k = (vdist(p, c) - waveR) / 16;
+        shine = Math.exp(-k * k) * (1 - wave / 1.6);
+      }
+      if (d.dew && r > 1.5) {
+        const tw = Math.sin(t * 0.8 + d.ph * 3);
+        if (tw > 0.94) shine = Math.max(shine, (tw - 0.94) / 0.06);
+      }
+      if (shine > 0.05) glints.push(p.x, p.y, (r * 5 + 6) * (0.6 + 0.4 * shine), shine);
     }
     ctx.globalAlpha = 0.85 * a;
     ctx.fillStyle = SHEEN;
-    ctx.fill(drops);
+    ctx.fill(glue);
+    ctx.globalAlpha = a;
+    for (let i = 0; i < dew.length; i += 3) stampDrop(ctx, dew[i], dew[i + 1], dew[i + 2]);
+    for (const f of this.falling) {
+      ctx.globalAlpha = Math.min(1, f.life * 1.5) * Math.max(a, 0.5);
+      stampDrop(ctx, f.x, f.y, f.r, 1 + Math.min(1.4, Math.abs(f.vy) / 700));
+    }
+    for (let i = 0; i < glints.length; i += 4) {
+      ctx.globalAlpha = a * glints[i + 3];
+      stampGlint(ctx, glints[i], glints[i + 1], glints[i + 2]);
+    }
     ctx.restore();
+  }
+
+  // While spinning, the newest silk shines and fades to normal, and a soft
+  // light marks where it is leaving the spider.
+  drawFresh(ctx, seg, count, a) {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.1;
+    for (let s = count, n = 0; s >= 0 && n < 14; s--, n++) {
+      const sg = seg[s];
+      if (!sg) continue;
+      const f = s === count ? 1 : 1 - (this.age - this.laidAt[s]) / 1.2;
+      if (f <= 0) break;
+      const [p, q] = sg, kind = this.strokes[s].kind;
+      ctx.globalAlpha = 0.65 * f * a;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      if (kind in SAG) ctx.quadraticCurveTo((p.x + q.x) / 2, (p.y + q.y) / 2 + vdist(p, q) * SAG[kind], q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
+      ctx.stroke();
+    }
+    const glow = clamp(1 - (this.age - this.movedAt) * 2.5, 0, 1);
+    if (this.movedAt >= 0 && glow > 0) {
+      const p = this.pen;
+      ctx.globalAlpha = 0.75 * glow * a;
+      ctx.drawImage(sprites().glow, p.x - 10, p.y - 10, 20, 20);
+    }
   }
 
   hitBy(p, q) {
