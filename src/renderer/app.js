@@ -562,7 +562,7 @@
 
   // Handy for poking at it from devtools (and for stepping time in tests).
   window.__itsy = {
-    brain, spider, world, CFG, settings, applySettings, clearSilk, onCursor,
+    brain, spider, world, CFG, settings, applySettings, clearSilk, onCursor, reportFakeWindows,
     step(dt) { update(dt); render(now()); },
     get webs() { return webs; },
     get threads() { return threads; },
