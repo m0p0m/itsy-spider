@@ -88,6 +88,20 @@ npm start
 
 اگر Itsy لبخند به لبتان آورد، یک ⭐ کمک می‌کند بقیه هم پیدایش کنند.
 
+## حمایت
+
+Itsy رایگان است و رایگان می‌ماند. اگر دوست داشتید برای عنکبوت یک مگس بخرید، می‌توانید TON (یا هر توکنی روی شبکه‌ی TON، مثل USDT) به این آدرس بفرستید:
+
+<div dir="ltr">
+
+```
+UQCS8mqqOpwOQRs6gBl6WWmXSTN0Tn9Di1TELpsQLqWrGTrB
+```
+
+</div>
+
+[باز کردن در Tonkeeper](https://app.tonkeeper.com/transfer/UQCS8mqqOpwOQRs6gBl6WWmXSTN0Tn9Di1TELpsQLqWrGTrB). ممنون! 🕷
+
 ## مجوز
 
 MIT

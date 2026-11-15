@@ -174,6 +174,16 @@ Bug reports, ideas, art and code are all welcome, beginners included. Start with
 
 If Itsy made you smile, a ⭐ helps other people find it.
 
+## Support Itsy
+
+Itsy is free and always will be. If you'd like to buy the spider a fly, you can send TON (or any token on TON, like USDT) to:
+
+```
+UQCS8mqqOpwOQRs6gBl6WWmXSTN0Tn9Di1TELpsQLqWrGTrB
+```
+
+[Open in Tonkeeper](https://app.tonkeeper.com/transfer/UQCS8mqqOpwOQRs6gBl6WWmXSTN0Tn9Di1TELpsQLqWrGTrB). Thank you! 🕷
+
 ## License
 
 MIT
