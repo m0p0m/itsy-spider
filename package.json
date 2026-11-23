@@ -19,6 +19,7 @@
     "overlay"
   ],
   "scripts": {
+    "test": "node --test",
     "start": "electron .",
     "demo": "electron . --demo",
     "stop": "electron . --quit",
